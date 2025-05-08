@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loadbalance-demo
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: loadbalance-demo
+  template:
+    metadata:
+      labels:
+        app: loadbalance-demo
+    spec:
+      containers:
+      - name: web
+        image: hashicorp/http-echo
+        args:
+          - "-text=Hello from $(POD_NAME)"
+        env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+        ports:
+        - containerPort: 5678
+        resources:
+          requests:
+            cpu: "10m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: loadbalance-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: loadbalance-demo
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5678
